@@ -89,5 +89,6 @@ subprojects {
 }
 
 task<Delete>("clean") {
+    // delete dir
     delete(rootProject.buildDir)
 }

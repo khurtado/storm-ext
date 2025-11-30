@@ -6,7 +6,7 @@ cloudstream {
     language = "es"
     // All of these properties are optional, you can safely remove them
 
-    //description = "Lorem Ipsum"
+    //description = "Anime in spanish"
     authors = listOf("Stormunblessed")
 
     /**
