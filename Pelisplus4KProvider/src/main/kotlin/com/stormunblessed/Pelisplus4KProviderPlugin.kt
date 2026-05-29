@@ -70,7 +70,7 @@ class Pelisplus4KProviderPlugin: Plugin() {
         registerExtractorAPI(ByseVepoin())
         registerExtractorAPI(ByseQekaho())
         registerExtractorAPI(ByseSX())
-//        Filesim
-        registerExtractorAPI(EmturbovidCom())
+//        new Emturbovid
+        registerExtractorAPI(EmturbovidExtractor())
     }
 }
