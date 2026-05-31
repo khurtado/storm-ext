@@ -13,6 +13,7 @@ import com.lagradost.cloudstream3.utils.newExtractorLink
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.Interceptor
 import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
@@ -23,10 +24,11 @@ object Embed69Extractor {
         url: String,
         referer: String,
         subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
+        callback: (ExtractorLink) -> Unit,
+        interceptor: Interceptor? = null
     ) {
         var aesKey: ByteArray;
-        app.get(url).document.select("script")
+        app.get(url, interceptor = interceptor).document.select("script")
             .firstOrNull { it.html().contains("dataLink = [") }?.html()?.let {
                 val POW_CHALLENGE = it.substringAfter("const POW_CHALLENGE = '").substringBefore("';")
                 val POW_DIFFICULTY = it.substringAfter("const POW_DIFFICULTY = ").substringBefore(";").toInt()
