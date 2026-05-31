@@ -44,10 +44,10 @@ class PelispediaMovProvider : MainAPI() {
     private fun Element.toSearchResult(): SearchResponse? {
         val anchor = this.selectFirst("a") ?: return null
         val href = anchor.attr("href")
-        val title = this.selectFirst("h4")?.text() ?: return null
+        val title = this.selectFirst("h2, h4")?.text()?.trim() ?: return null
         val img = this.selectFirst("img")?.attr("src")
-        val year = this.selectFirst("div.nova-badge.year")?.text()?.toIntOrNull()
-        val typeText = this.selectFirst("div.nova-badge.secondary")?.text()?.lowercase() ?: ""
+        val year = this.selectFirst(".nova-badge.year")?.text()?.trim()?.toIntOrNull()
+        val typeText = this.selectFirst(".nova-badge.secondary")?.text()?.lowercase() ?: ""
         val tvType = when {
             "serie" in typeText -> TvType.TvSeries
             "anime" in typeText -> TvType.Anime
@@ -82,12 +82,15 @@ class PelispediaMovProvider : MainAPI() {
             ?.select("div.mb-6 h2")
             ?.firstOrNull()?.text()?.trim()
 
-        val metaDiv = doc.selectFirst("h1")?.nextElementSibling()
-        val dateText = metaDiv?.selectFirst("span.nova-badge.secondary")?.text()?.trim() ?: ""
-        val year = Regex("(\\d{4})").find(dateText)?.groupValues?.get(1)?.toIntOrNull()
+        val yearText = doc.selectFirst("h1")
+            ?.parent()
+            ?.selectFirst(".nova-badge.year")?.text()?.trim() ?: ""
+        val year = Regex("(\\d{4})").find(yearText)?.groupValues?.get(1)?.toIntOrNull()
 
-        val genreDiv = doc.selectFirst("h1")?.parent()?.select("div.mb-6 a[href*=/generos/]")
-        val tags = genreDiv?.map { it.text().trim() } ?: emptyList()
+        val tags = doc.selectFirst("h1")
+            ?.parent()
+            ?.select("div.mb-6 a[href*=/generos/]")
+            ?.map { it.text().trim() } ?: emptyList()
 
         if (tvType == TvType.Movie) {
             return newMovieLoadResponse(title, url, tvType, url) {
@@ -131,9 +134,10 @@ class PelispediaMovProvider : MainAPI() {
     ): Boolean {
         val doc = app.get(data).document
         doc.select("div.player-content iframe").amap { iframe ->
-            val src = iframe.attr("src").ifEmpty { iframe.attr("data-src") }
+            var src = iframe.attr("src").ifEmpty { iframe.attr("data-src") }
             if (src.isNotBlank()) {
-                if ("embed69" in src) {
+                src = fixUrl(src)
+                if ("embed69" in src || src.contains("/vidurl/")) {
                     Embed69Extractor.load(src, data, subtitleCallback, callback)
                 } else {
                     loadExtractor(fixHostsLinks(src), data, subtitleCallback, callback)
