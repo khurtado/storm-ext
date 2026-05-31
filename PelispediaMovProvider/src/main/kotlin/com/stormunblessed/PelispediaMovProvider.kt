@@ -1,6 +1,7 @@
 package com.stormunblessed
 
 import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.loadExtractor
 import org.jsoup.nodes.Element
@@ -21,6 +22,8 @@ class PelispediaMovProvider : MainAPI() {
         TvType.AsianDrama,
     )
 
+    private val cloudflareKiller = CloudflareKiller()
+
     override val mainPage = mainPageOf(
         "peliculas" to "Películas",
         "series" to "Series",
@@ -29,7 +32,7 @@ class PelispediaMovProvider : MainAPI() {
     )
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val document = app.get("$mainUrl/${request.data}?page=$page").document
+        val document = app.get("$mainUrl/${request.data}?page=$page", interceptor = cloudflareKiller).document
         val home = document.select("div.movie-card").mapNotNull { it.toSearchResult() }
         return newHomePageResponse(
             list = HomePageList(
@@ -61,12 +64,12 @@ class PelispediaMovProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val document = app.get("$mainUrl/search?s=$query").document
+        val document = app.get("$mainUrl/search?s=$query", interceptor = cloudflareKiller).document
         return document.select("div.movie-card").mapNotNull { it.toSearchResult() }
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val doc = app.get(url).document
+        val doc = app.get(url, interceptor = cloudflareKiller).document
 
         val tvType = when {
             "/pelicula/" in url -> TvType.Movie
@@ -132,13 +135,13 @@ class PelispediaMovProvider : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        val doc = app.get(data).document
+        val doc = app.get(data, interceptor = cloudflareKiller).document
         doc.select("div.player-content iframe").amap { iframe ->
             var src = iframe.attr("src").ifEmpty { iframe.attr("data-src") }
             if (src.isNotBlank()) {
                 src = fixUrl(src)
                 if ("embed69" in src || src.contains("/vidurl/")) {
-                    Embed69Extractor.load(src, data, subtitleCallback, callback)
+                    Embed69Extractor.load(src, data, subtitleCallback, callback, cloudflareKiller)
                 } else {
                     loadExtractor(fixHostsLinks(src), data, subtitleCallback, callback)
                 }
