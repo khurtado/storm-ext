@@ -49,6 +49,10 @@ jobs:
           cp **/build/*.cs3 $GITHUB_WORKSPACE/builds
           cp build/plugins.json $GITHUB_WORKSPACE/builds
 
+      - name: Generate repo.json
+        run: |
+          printf '{\n  "name": "Storm-ext",\n  "description": "CloudStream3 extensions by %s",\n  "manifestVersion": 1,\n  "pluginLists": [\n    "https://raw.githubusercontent.com/%s/builds/plugins.json"\n  ]\n}\n' "$GITHUB_REPOSITORY_OWNER" "$GITHUB_REPOSITORY" > $GITHUB_WORKSPACE/builds/repo.json
+
       - name: Push builds
         run: |
           cd $GITHUB_WORKSPACE/builds
